@@ -1,7 +1,9 @@
 set(sources "main.c")
 set(include_directories ".")
-set(required_components bluetooth_keyboard_sender
-                        physical_keyboard)
+set(required_components nvs_flash
+                        mbedtls
+                        web_base
+                        web_flash)                        
 
 idf_component_register(SRCS         "${sources}"
                        INCLUDE_DIRS "${include_directories}"
