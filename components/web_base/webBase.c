@@ -30,7 +30,8 @@ static void task(void* parameters);
 
 static httpd_handle_t _server = NULL;
 
-static void (*onWebserverCreated)(httpd_handle_t* server) = NULL;
+static void (*onWebserverCreated[10])(httpd_handle_t* server) = {0};
+static uint8_t onWebserverCreatedIndex = 0;
 static esp_err_t (*onGetRequestIndexOverride)(httpd_req_t *r) = NULL;
 static esp_err_t (*onGetRequestStylesOverride)(httpd_req_t *r) = NULL;
 static esp_err_t (*onGetRequestFaviconOverride)(httpd_req_t *r) = NULL;
@@ -62,7 +63,8 @@ httpd_handle_t webBase_getServer()
 
 void webBase_registerOnWebserverCreated(void (*handler)(httpd_handle_t* server))
 {
-    onWebserverCreated = handler;
+    onWebserverCreated[onWebserverCreatedIndex] = handler;
+    onWebserverCreatedIndex++;
 }
 
 void webBase_overrideIndex(esp_err_t (*handler)(httpd_req_t *r))
@@ -103,9 +105,12 @@ static void onIpConnect(void* arg, esp_event_base_t event_base, int32_t event_id
     if (*server == NULL) 
     {
         *server = createWebserver();
-        if (onWebserverCreated != NULL)
+        if (onWebserverCreatedIndex > 0)
         {
-            onWebserverCreated(server);
+            for (uint8_t i = 0; i < onWebserverCreatedIndex; ++i)
+            {                
+                onWebserverCreated[i](server);
+            }            
         }        
     }
 }
