@@ -7,6 +7,7 @@
 #include "cmake_build_info.h"
 #include "webBase.h"
 #include "webFlash.h"
+#include "webVisualizer.h"
 
 #include "mbedtls/error.h"
 
@@ -37,6 +38,7 @@ void initUserComponents()
 {
     webBase_init();
     webFlash_init();
+    webVisualizer_init();
 }
 
 void configureComponents()
@@ -47,4 +49,5 @@ void startComponents()
 {
     webBase_start();
     webFlash_start();
+    webVisualizer_start();
 }

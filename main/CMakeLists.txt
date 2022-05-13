@@ -3,7 +3,8 @@ set(include_directories ".")
 set(required_components nvs_flash
                         mbedtls
                         web_base
-                        web_flash)                        
+                        web_flash
+                        web_visualizer)                        
 
 idf_component_register(SRCS         "${sources}"
                        INCLUDE_DIRS "${include_directories}"
