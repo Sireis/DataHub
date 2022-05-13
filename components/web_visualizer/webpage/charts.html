@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css"> 
+    <title>Charts</title>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js" integrity="sha512-QSkVNOCYLtj73J4hbmVoOV6KVZuMluZlioC+trLpewV8qMjsWqlIQvkn1KGX2StWvPMdWGBqim1xlC8krl1EKQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.3/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0/dist/chartjs-adapter-moment.min.js"></script>    
+
+    <div style="max-width:700px">
+        <canvas id="chart1" width="297" height="210"></canvas>
+    </div>
+    <div style="max-width:700px">
+        <canvas id="chart2" width="297" height="210"></canvas>
+    </div>
+
+    <script>
+        var chartColors = {
+            red: 'rgb(255, 99, 132)',
+            orange: 'rgb(255, 159, 64)',
+            yellow: 'rgb(255, 205, 86)',
+            green: 'rgb(75, 192, 192)',
+            blue: 'rgb(54, 162, 235)',
+            purple: 'rgb(153, 102, 255)',
+            grey: 'rgb(231,233,237)'
+        };
+
+        const context1 = document.getElementById('chart1').getContext('2d');
+        const chart1 = new Chart(context1, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: "chart 1",
+                    data: 0,
+                    borderColor: chartColors.blue,
+                    pointBackgroundColor: chartColors.blue,
+                    tension: 0.5
+                }]
+            },
+            options: {            
+                scales: {
+                    xAxes: {
+                        type: 'time',
+                        time: {
+                            unit: 'minute'
+                        }
+                    }
+                },
+                legend: {
+                    labels: {
+                        fontColor: 'white'
+                    }
+                },
+                title: {
+                    fontColor: 'white'
+                },
+                scale: {
+                    ticks: {
+                        beginAtZero: true,
+                        fontColor: 'white',
+                        showLabelBackdrop: false
+                    },
+                    gridLines: {
+                        color: 'rgba(255, 255, 255, 0.2)'
+                    }
+                }
+            },
+        });
+        
+        const context2 = document.getElementById('chart2').getContext('2d');
+        const chart2 = new Chart(context2, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: "chart 2",
+                    data: 0,
+                    borderColor: chartColors.red,
+                    tension: 0.5
+                }]
+            },
+            options: {            
+                scales: {
+                    xAxes: {
+                        type: 'time',
+                        time: {
+                            unit: 'minute'
+                        }
+                    }
+                }
+            },
+        });
+
+        (function worker() {
+            $.ajax({
+                url: 'data',
+                dataType: 'text',
+                success: function(data) {
+                    console.log('received new data');
+                    var jsonData = JSON.parse(data);
+                    console.log(jsonData);
+                    var point = jsonData;
+                    chart1.data.labels.push(new Date());
+                    chart1.data.datasets.forEach((dataset) => {dataset.data.push(point.y)});       
+                    chart1.update();
+                },
+                complete: function() {
+                    setTimeout(worker, 5000);
+                }
+            });
+        })();
+    </script>
+</body>
+</html>
