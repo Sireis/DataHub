@@ -9,6 +9,11 @@
 #include "webFlash.h"
 #include "webVisualizer.h"
 
+#include "dataSourceRandom.h"
+#include "dataSourceTemperature.h"
+
+#include "data_interface.h"
+
 #include "mbedtls/error.h"
 
 static void initSystemComponents();
@@ -39,10 +44,14 @@ void initUserComponents()
     webBase_init();
     webFlash_init();
     webVisualizer_init();
+    dataSourceTemperature_init();
 }
 
 void configureComponents()
 {
+    QueueHandle_t queue = dataIf_createQueue(10);
+    dataSourceTemperature_setOutboundQueue(queue);
+    webVisualizer_setInboundQueue(queue);
 }
 
 void startComponents()
@@ -50,4 +59,5 @@ void startComponents()
     webBase_start();
     webFlash_start();
     webVisualizer_start();
+    dataSourceTemperature_start();
 }

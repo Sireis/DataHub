@@ -4,7 +4,10 @@ set(required_components nvs_flash
                         mbedtls
                         web_base
                         web_flash
-                        web_visualizer)                        
+                        web_visualizer
+                        data_interface
+                        data_source_random
+                        data_source_temperature)                        
 
 idf_component_register(SRCS         "${sources}"
                        INCLUDE_DIRS "${include_directories}"
