@@ -79,10 +79,6 @@ static void task(void* parameters)
             if (ret == ESP_OK) 
             {
                 ESP_LOGI(TAG, "ota download successful, restarting soon.");
-                ESP_LOGW(TAG, "restarting in 5");
-                vTaskDelay(1000 / portTICK_PERIOD_MS);
-                ESP_LOGW(TAG, "restarting in 4");
-                vTaskDelay(1000 / portTICK_PERIOD_MS);
                 ESP_LOGW(TAG, "restarting in 3");
                 vTaskDelay(1000 / portTICK_PERIOD_MS);
                 ESP_LOGW(TAG, "restarting in 2");
