@@ -18,6 +18,9 @@
     <div style="max-width:700px">
         <canvas id="chart2" width="297" height="210"></canvas>
     </div>
+    <div style="max-width:700px">
+        <canvas id="chart3" width="297" height="210"></canvas>
+    </div>
 
     <script>
         var chartColors = {
@@ -30,15 +33,109 @@
             grey: 'rgb(231,233,237)'
         };
 
-        const context1 = document.getElementById('chart1').getContext('2d');
-        const chart1 = new Chart(context1, {
+        var data1Color = {
+            solid: "rgba(195, 40, 96, 1)",
+            transparent: "rgba(195, 40, 96, 0.1)"
+        };
+        
+        var data2Color = {
+            solid: "rgba(255, 172, 100, 1)",
+            transparent: "rgba(255, 172, 100, 0.1)"
+        };
+        
+        var data3Color = {
+            solid: "rgba(88, 188, 116, 1)",
+            transparent: "rgba(88, 188, 116, 0.1)"
+        };
+
+        var commonOptions = {
+            scales: {
+                x: {
+                    grid: {
+                        color: 'white'
+                    },
+                    ticks: {
+                        color: 'white'
+                    },
+                    type: 'time',
+                    time: {
+                        unit: 'minute'
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'white'
+                    },
+                    ticks: {
+                        color: 'white',
+                    }
+                }
+            }
+        }
+
+        var context1 = document.getElementById('chart1').getContext('2d');
+        window.chart1 = new Chart(context1, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                {
+                    label: "Front",
+                    backgroundColor: data1Color.transparent,                    
+                    borderColor: data1Color.solid,
+                    pointColor: data1Color.solid,
+                    pointBorderColor: data1Color.solid,
+                    pointBackgroundColor: data1Color.solid,
+                    pointHoverBorderColor: 'white',
+                    pointHitRadius: 20,
+                    pointBorderWidth: 6,
+                    data: [],
+                    fill: true
+                },
+                {
+                    label: "Middle",
+                    backgroundColor: data2Color.transparent,
+                    borderColor: data2Color.solid,
+                    pointColor: data2Color.solid,
+                    pointBorderColor: data2Color.solid,
+                    pointBackgroundColor: data2Color.solid,
+                    pointHoverBorderColor: 'white',
+                    pointHitRadius: 20,
+                    pointBorderWidth: 6,
+                    data: [],
+                    fill: true
+                },
+                {
+                    label: "Back",
+                    backgroundColor: data3Color.transparent,
+                    borderColor: data3Color.solid,
+                    pointColor: data3Color.solid,
+                    pointBorderColor: data3Color.solid,
+                    pointBackgroundColor: data3Color.solid,
+                    pointHoverBorderColor: 'white',
+                    pointHitRadius: 20,
+                    pointBorderWidth: 6,
+                    data: [],
+                    fill: true
+                }
+                ]
+            },
+            options: commonOptions,
+        });
+        
+        const context2 = document.getElementById('chart2').getContext('2d');
+        const chart2 = new Chart(context2, {
             type: 'line',
             data: {
                 datasets: [{
-                    label: "chart 1",
+                    label: "chart 2",
                     data: 0,
-                    borderColor: chartColors.blue,
-                    pointBackgroundColor: chartColors.blue,
+                    fillColor: "rgba(255, 172, 100, 0.1)",
+                    strokeColor: "rgba(255, 172, 100, 1)",
+                    pointColor: "rgba(255, 172, 100, 1)",
+                    pointStrokeColor: "#202b33",
+                    pointHighlightStroke: "rgba(225,225,225,0.9)",
                     tension: 0.5
                 }]
             },
@@ -50,36 +147,22 @@
                             unit: 'minute'
                         }
                     }
-                },
-                legend: {
-                    labels: {
-                        fontColor: 'white'
-                    }
-                },
-                title: {
-                    fontColor: 'white'
-                },
-                scale: {
-                    ticks: {
-                        beginAtZero: true,
-                        fontColor: 'white',
-                        showLabelBackdrop: false
-                    },
-                    gridLines: {
-                        color: 'rgba(255, 255, 255, 0.2)'
-                    }
                 }
             },
         });
         
-        const context2 = document.getElementById('chart2').getContext('2d');
-        const chart2 = new Chart(context2, {
+        const context3 = document.getElementById('chart3').getContext('2d');
+        const chart3 = new Chart(context3, {
             type: 'line',
             data: {
                 datasets: [{
-                    label: "chart 2",
+                    label: "chart 3",
                     data: 0,
-                    borderColor: chartColors.red,
+                    fillColor: "rgba(19, 71, 34, 0.3)",
+                    strokeColor: "rgba(88, 188, 116, 1)",
+                    pointColor: "rgba(88, 188, 116, 1)",
+                    pointStrokeColor: "#202b33",
+                    pointHighlightStroke: "rgba(225,225,225,0.9)",
                     tension: 0.5
                 }]
             },
@@ -95,24 +178,36 @@
             },
         });
 
+        var dataCount = 720;
+
         (function worker() {
             $.ajax({
                 url: 'data',
+                data: "count="+dataCount+"",
                 dataType: 'text',
                 success: function(data) {
                     console.log('received new data');
-                    var jsonData = JSON.parse(data);
+                    let jsonData = JSON.parse(data);
                     console.log(jsonData);
-                    var point = jsonData;
-                    chart1.data.labels.push(new Date());
-                    chart1.data.datasets.forEach((dataset) => {dataset.data.push(point.y)});       
-                    chart1.update();
+                    let now = new Date();
+                    let timeDelta = moment.duration(jsonData.sampleDelta, 'minutes');
+                    for (let i = jsonData.data.length - 1; i >= 0; i--) {         
+                        let time = now - (i - 1)*timeDelta;       
+                        addToChart(chart1, time, jsonData.data[i]);
+                    }
+                    dataCount = 1;
                 },
                 complete: function() {
-                    setTimeout(worker, 5000);
+                    setTimeout(worker, 60*1000);
                 }
             });
         })();
+
+        function addToChart(chart, time, y) {
+            chart.data.labels.push(time);
+            chart.data.datasets.forEach((dataset) => {dataset.data.push(y)});
+            chart.update();
+        }
     </script>
 </body>
 </html>
