@@ -1,3 +1,4 @@
+#pragma once
 #include <esp_https_server.h>
 
 void webBase_init();
