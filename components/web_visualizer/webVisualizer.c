@@ -14,40 +14,31 @@
 #include "webBase.h"
 #include "data_interface.h"
 
-#define RING_BUFFER_SIZE 1024
+#define RING_BUFFER_SIZE 1440
+#define MAX_DATA_SOURCES DATA_SOURCE_COUNT
 
 static const char *TAG = "webVisualizer";
 static TaskHandle_t _taskHandle;
 static QueueHandle_t inboundDataQueue;
 
 typedef struct {
-    uint16_t minute;
-    uint8_t second;
-} timestamp_t;
-
-typedef struct {
-    uint16_t value;
-    timestamp_t timestamp;
-} sample_t;
-
-typedef struct {
     sample_t data[RING_BUFFER_SIZE];
     uint16_t nextWriteIndex;
-    uint16_t nextReadIndex;
     bool isOverflown;
 } ringBuffer_t;
 
-ringBuffer_t ringBuffer;
+ringBuffer_t ringBuffers[MAX_DATA_SOURCES];
 
 static void task(void* parameters);
 
 static void onWebserverCreated(httpd_handle_t* server);
 static esp_err_t onGetRequestIndex(httpd_req_t* request);
 static esp_err_t onGetRequestData(httpd_req_t* request);
-static void addToRingBuffer(dataQueueContent_t data);
-static sample_t popRingBuffer();
-static sample_t readFromRingBuffer(int16_t backwardsIndex);
-static timestamp_t convertToTimestamp(int64_t microSeconds);
+static void addToRingBuffer(ringBuffer_t* ringBuffer, sample_t data);
+static sample_t popRingBuffer(ringBuffer_t* ringBuffer);
+static sample_t readFromRingBuffer(ringBuffer_t* ringBuffer, int16_t backwardsIndex);
+static bool isRingBufferEmpty(ringBuffer_t* ringBuffer);
+static uint16_t getMin(uint16_t a, uint16_t b);
 
 void webVisualizer_init()
 {
@@ -84,7 +75,7 @@ static void task(void* parameters)
         if (xQueueReceive(inboundDataQueue, &data, portMAX_DELAY) == pdPASS)
         {        
             ESP_LOGD(TAG, "Received data: %d", data.value);
-            addToRingBuffer(data);
+            addToRingBuffer(&ringBuffers[data.source], data.value);
         }
     }
 
@@ -121,17 +112,23 @@ static esp_err_t onGetRequestIndex(httpd_req_t* request)
 static esp_err_t onGetRequestData(httpd_req_t* request)
 {
     httpd_resp_set_type(request, "application/json");
-    uint16_t count = 10;
-    ESP_LOGI(TAG, "incoming data get request: %s", request->uri);
-    sscanf(request->uri, "/data?count=%hd", &count);
-    ESP_LOGI(TAG, "sscanfed count: %d", count);
+    uint16_t requestedCount = 1;
+    ESP_LOGD(TAG, "incoming data get request: %s", request->uri);
+    sscanf(request->uri, "/data?count=%hd", &requestedCount);
+    ESP_LOGD(TAG, "sscanfed count: %d", requestedCount);
+    ringBuffer_t* buffer = &ringBuffers[DATA_SOURCE_0];
+    uint16_t availableCount = buffer->isOverflown ? RING_BUFFER_SIZE : buffer->nextWriteIndex;
+    uint16_t count = getMin(requestedCount, availableCount);
+    ESP_LOGD(TAG, "capped count %d", count);
     char json[4096];
     char *p = json;
     p += sprintf(p, "{\"sampleDelta\": 1, \"data\": [");
-    count = ringBuffer.isOverflown ? count : ringBuffer.nextReadIndex - 1;
-    for (uint16_t i = 0; i < count; ++i)
+    if (!isRingBufferEmpty(buffer))
     {
-        p += sprintf(p, "%d, ", readFromRingBuffer(-i).value);
+        for (uint16_t i = 0; i < count; ++i)
+        {
+            p += sprintf(p, "%d, ", readFromRingBuffer(buffer, -i));
+        }
     }
     sprintf(p - 2, "]}");    
     ESP_LOGI(TAG, "%s", json);
@@ -140,47 +137,47 @@ static esp_err_t onGetRequestData(httpd_req_t* request)
     return ESP_OK;
 }
 
-static void addToRingBuffer(dataQueueContent_t data)
-{
-    int64_t currentMicroSeconds = esp_timer_get_time();
-    ringBuffer.data[ringBuffer.nextWriteIndex].timestamp = convertToTimestamp(currentMicroSeconds);
-    ringBuffer.data[ringBuffer.nextWriteIndex].value = data.value;
+static void addToRingBuffer(ringBuffer_t* ringBuffer, sample_t data)
+{    
+    ringBuffer->data[ringBuffer->nextWriteIndex] = data;
 
-    ringBuffer.nextWriteIndex++;
-    ringBuffer.nextWriteIndex = ringBuffer.nextWriteIndex % RING_BUFFER_SIZE;
+    ringBuffer->nextWriteIndex++;
+    ringBuffer->nextWriteIndex = ringBuffer->nextWriteIndex % RING_BUFFER_SIZE;
 }
 
-static sample_t popRingBuffer()
+static sample_t popRingBuffer(ringBuffer_t* ringBuffer)
 {
-    uint16_t readingIndex = ringBuffer.nextWriteIndex - 1;
+    uint16_t readingIndex = ringBuffer->nextWriteIndex - 1;
     if (readingIndex > RING_BUFFER_SIZE)
     {
         readingIndex = RING_BUFFER_SIZE - 1;
     }
 
-    sample_t sample = ringBuffer.data[readingIndex];
-    ringBuffer.nextWriteIndex = readingIndex;
+    sample_t sample = ringBuffer->data[readingIndex];
+    ringBuffer->nextWriteIndex = readingIndex;
     return sample;
 }
 
-static sample_t readFromRingBuffer(int16_t backwardsIndex)
+static sample_t readFromRingBuffer(ringBuffer_t* ringBuffer, int16_t backwardsIndex)
 {
-    uint16_t readingIndex = ringBuffer.nextWriteIndex - 1 + backwardsIndex;
+    uint16_t readingIndex = ringBuffer->nextWriteIndex - 1 + backwardsIndex;
     
     if (readingIndex > RING_BUFFER_SIZE)
     {
-        readingIndex = RING_BUFFER_SIZE - 1 - (abs(backwardsIndex) - ringBuffer.nextWriteIndex);
+        readingIndex = RING_BUFFER_SIZE - 1 - (abs(backwardsIndex) - ringBuffer->nextWriteIndex);
     }
 
-    return ringBuffer.data[readingIndex];
+    ESP_LOGI(TAG, "Ring buffer: Requested: %d, Reading from %d", backwardsIndex, readingIndex);
+    return ringBuffer->data[readingIndex];
 }
 
-static timestamp_t convertToTimestamp(int64_t microSeconds)
+static bool isRingBufferEmpty(ringBuffer_t* ringBuffer)
 {
-    timestamp_t timestamp = {
-        .minute = microSeconds / 1000 / 1000 / 60,
-        .second = microSeconds % (1000 * 1000 * 60),
-    };
+    ESP_LOGI(TAG, "isOverflown: %d, nexWriteIndex: %d", ringBuffer->isOverflown, ringBuffer->nextWriteIndex);
+    return !ringBuffer->isOverflown && (ringBuffer->nextWriteIndex == 0);
+}
 
-    return timestamp;
+static uint16_t getMin(uint16_t a, uint16_t b)
+{
+    return (a < b) ? a : b;
 }

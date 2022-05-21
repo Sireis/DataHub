@@ -7,7 +7,9 @@ set(required_components nvs_flash
                         web_visualizer
                         data_interface
                         data_source_random
-                        data_source_temperature)                        
+                        data_source_raw
+                        data_source_temperature
+                        data_source_moisture)                        
 
 idf_component_register(SRCS         "${sources}"
                        INCLUDE_DIRS "${include_directories}"

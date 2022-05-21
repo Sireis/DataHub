@@ -11,6 +11,8 @@
 
 #include "dataSourceRandom.h"
 #include "dataSourceTemperature.h"
+#include "dataSourceMoisture.h"
+#include "dataSourceRaw.h"
 
 #include "data_interface.h"
 
@@ -45,13 +47,21 @@ void initUserComponents()
     webFlash_init();
     webVisualizer_init();
     dataSourceTemperature_init();
+    dataSourceRaw_init();
+    dataSourceMoisture_init();
 }
 
 void configureComponents()
 {
     QueueHandle_t queue = dataIf_createQueue(10);
     dataSourceTemperature_setOutboundQueue(queue);
+    dataSourceRaw_setOutboundQueue(queue);
+    dataSourceMoisture_setOutboundQueue(queue);
     webVisualizer_setInboundQueue(queue);
+
+    dataSourceTemperature_setSourceIndex(DATA_SOURCE_0);
+    dataSourceMoisture_setSourceIndex(DATA_SOURCE_1);
+    dataSourceRaw_setSourceIndex(DATA_SOURCE_2);
 }
 
 void startComponents()
@@ -60,4 +70,6 @@ void startComponents()
     webFlash_start();
     webVisualizer_start();
     dataSourceTemperature_start();
+    dataSourceRaw_start();
+    dataSourceMoisture_start();
 }

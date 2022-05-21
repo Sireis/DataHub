@@ -17,6 +17,8 @@ static TaskHandle_t _taskHandle;
 
 static QueueHandle_t outboundQueue = NULL;
 
+static dataSource_t _sourceIndex = DATA_SOURCE_0;
+
 static void task(void* parameters);
 
 void dataSourceRandom_init()
@@ -39,6 +41,11 @@ void dataSourceRandom_start()
 void dataSourceRandom_setOutboundQueue(QueueHandle_t queue)
 {
     outboundQueue = queue;
+}
+
+void dataSourceRandom_setSourceIndex(dataSource_t sourceIndex)
+{
+    _sourceIndex = sourceIndex;
 }
 
 static void task(void* parameters)

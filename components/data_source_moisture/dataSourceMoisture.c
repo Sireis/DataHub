@@ -1,4 +1,4 @@
-#include "dataSourceTemperature.h"
+#include "dataSourceMoisture.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -16,21 +16,21 @@
 
 #define PERIOD_TIME_MS  (60*1000)
 
-static const char *TAG = "dataSourceTemperature";
+static const char *TAG = "dataSourceMoisture";
 static TaskHandle_t _taskHandle;
 static QueueHandle_t _outboundQueue = NULL;
 
 #define DEFAULT_VREF    1100        //Use adc2_vref_to_gpio() to obtain a better estimate
 #define MULTISHOTS   16          //Multisampling
 
-#define SUPPORTING_POINT_THETA_1    8000
-#define SUPPORTING_POINT_THETA_2    22500
+#define SUPPORTING_POINT_THETA_1    0
+#define SUPPORTING_POINT_THETA_2    100000
 
-#define SUPPORTING_POINT_V_1        1002
-#define SUPPORTING_POINT_V_2        631
+#define SUPPORTING_POINT_V_1        2460
+#define SUPPORTING_POINT_V_2        923
 
 static esp_adc_cal_characteristics_t *_adcCharacteristic;
-static const adc_channel_t _activeAdcChannel = ADC_CHANNEL_4;
+static const adc_channel_t _activeAdcChannel = ADC_CHANNEL_5;
 static const adc_bits_width_t _adcBitwidth = ADC_WIDTH_BIT_12;
 static const adc_atten_t _adcAttenuation = ADC_ATTEN_DB_11;
 static const adc_unit_t _adcUnit = ADC_UNIT_1;
@@ -41,9 +41,9 @@ static void task(void* parameters);
 static void checkEfuse();
 static void print_char_val_type(esp_adc_cal_value_t val_type);
 static uint32_t sampleMilliVoltage();
-static int32_t convertToTemperature(uint32_t millVoltage);
+static int32_t convertToRelativeMoisture(uint32_t millVoltage);
 
-void dataSourceTemperature_init()
+void dataSourceMoisture_init()
 {
     checkEfuse();
     
@@ -62,10 +62,10 @@ void dataSourceTemperature_init()
     print_char_val_type(val_type);
 }
 
-void dataSourceTemperature_start()
+void dataSourceMoisture_start()
 {
     xTaskCreatePinnedToCore(task, 
-                            "dataSourceTemperatureTask", 
+                            "dataSourceMoistureTask", 
                             2*1024, 
                             NULL, 
                             configMAX_PRIORITIES - 3, 
@@ -74,12 +74,12 @@ void dataSourceTemperature_start()
                             );
 }
 
-void dataSourceTemperature_setOutboundQueue(QueueHandle_t queue)
+void dataSourceMoisture_setOutboundQueue(QueueHandle_t queue)
 {
     _outboundQueue = queue;
 }
 
-void dataSourceTemperature_setSourceIndex(dataSource_t sourceIndex)
+void dataSourceMoisture_setSourceIndex(dataSource_t sourceIndex)
 {
     _sourceIndex = sourceIndex;
 }
@@ -95,11 +95,11 @@ static void task(void* parameters)
         {
             uint32_t milliVoltage = sampleMilliVoltage();
             dataQueueContent_t data = {
-                .unit = DATA_CELSIUS,
-                .value = convertToTemperature(milliVoltage),
+                .unit = DATA_PERCENTAGE,
+                .value = convertToRelativeMoisture(milliVoltage),
                 //.value = milliVoltage,
             };
-            ESP_LOGI(TAG, "Sampled temperature (%d)", data.value);
+            ESP_LOGI(TAG, "Sampled relative moisture (%d)", data.value);
             xQueueSendToBack(_outboundQueue, &data, 500 / portTICK_RATE_MS);
         }
 
@@ -112,12 +112,13 @@ static void task(void* parameters)
     vTaskDelete(_taskHandle);
 }
 
-static int32_t convertToTemperature(uint32_t milliVoltage)
+static int32_t convertToRelativeMoisture(uint32_t milliVoltage)
 {
     int32_t a = (SUPPORTING_POINT_THETA_1 - SUPPORTING_POINT_THETA_2) / (SUPPORTING_POINT_V_1 - SUPPORTING_POINT_V_2);
     int32_t b = SUPPORTING_POINT_THETA_1 - SUPPORTING_POINT_V_1*a;
-    int32_t temperature = a*milliVoltage + b;
-    return temperature;
+    int32_t percentage = a*milliVoltage + b;
+    if (percentage < 0) percentage = 0;
+    return percentage;
 }
 
 static uint32_t sampleMilliVoltage()

@@ -1,4 +1,4 @@
-#include "dataSourceTemperature.h"
+#include "dataSourceRaw.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -14,9 +14,9 @@
 #include "driver/adc.h"
 #include "esp_adc_cal.h"
 
-#define PERIOD_TIME_MS  (60*1000)
+#define PERIOD_TIME_MS  (1*1000)
 
-static const char *TAG = "dataSourceTemperature";
+static const char *TAG = "dataSourceRaw";
 static TaskHandle_t _taskHandle;
 static QueueHandle_t _outboundQueue = NULL;
 
@@ -43,7 +43,7 @@ static void print_char_val_type(esp_adc_cal_value_t val_type);
 static uint32_t sampleMilliVoltage();
 static int32_t convertToTemperature(uint32_t millVoltage);
 
-void dataSourceTemperature_init()
+void dataSourceRaw_init()
 {
     checkEfuse();
     
@@ -62,10 +62,10 @@ void dataSourceTemperature_init()
     print_char_val_type(val_type);
 }
 
-void dataSourceTemperature_start()
+void dataSourceRaw_start()
 {
     xTaskCreatePinnedToCore(task, 
-                            "dataSourceTemperatureTask", 
+                            "dataSourceRawTask", 
                             2*1024, 
                             NULL, 
                             configMAX_PRIORITIES - 3, 
@@ -74,12 +74,12 @@ void dataSourceTemperature_start()
                             );
 }
 
-void dataSourceTemperature_setOutboundQueue(QueueHandle_t queue)
+void dataSourceRaw_setOutboundQueue(QueueHandle_t queue)
 {
     _outboundQueue = queue;
 }
 
-void dataSourceTemperature_setSourceIndex(dataSource_t sourceIndex)
+void dataSourceRaw_setSourceIndex(dataSource_t sourceIndex)
 {
     _sourceIndex = sourceIndex;
 }
@@ -95,11 +95,11 @@ static void task(void* parameters)
         {
             uint32_t milliVoltage = sampleMilliVoltage();
             dataQueueContent_t data = {
-                .unit = DATA_CELSIUS,
-                .value = convertToTemperature(milliVoltage),
-                //.value = milliVoltage,
+                .unit = DATA_RAW,
+                //.value = convertToTemperature(milliVoltage),
+                .value = milliVoltage,
             };
-            ESP_LOGI(TAG, "Sampled temperature (%d)", data.value);
+            ESP_LOGI(TAG, "Sampled voltage (%d)", data.value);
             xQueueSendToBack(_outboundQueue, &data, 500 / portTICK_RATE_MS);
         }
 

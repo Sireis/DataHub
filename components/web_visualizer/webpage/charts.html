@@ -11,10 +11,45 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js" integrity="sha512-QSkVNOCYLtj73J4hbmVoOV6KVZuMluZlioC+trLpewV8qMjsWqlIQvkn1KGX2StWvPMdWGBqim1xlC8krl1EKQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.3/moment.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0/dist/chartjs-adapter-moment.min.js"></script>    
-
-    <div style="max-width:700px">
-        <canvas id="chart1" width="297" height="210"></canvas>
+    
+    <span id="sidebarButton" style="position: fixed;font-size:25px;cursor:pointer;z-index:999;" onclick="openSidebar()">&#9776;</span>
+    <div id="sidebar" class="side">
+        
+        <div class="group">
+            <div  style="float: left;" class="group">
+                <input type="text" id="name"/>
+                <label for="name">Window</label>
+                <div class="bar"></div>
+            </div>
+            
+            <div>
+                <button class="button" onclick="onButtonClick()">&check;</button>
+            </div>
+        </div>
+            
+        <div class="group">      
+            <div  style="float: left;" class="group">
+                <input type="text" id="name"/>
+                <label for="name">Max Y</label>
+                <div class="bar"></div>
+            </div>
+            
+            <div>
+                <button class="button" onclick="onButtonClick()">&check;</button>
+            </div>
+        </div>
+        
+        <a href="#">About</a>
     </div>
+        
+    <div id="main">
+            <div style="max-width:700px;">
+                <canvas id="chart1" width="297" height="210"></canvas>
+            </div>               
+    </div>
+        
+
+    
     <div style="max-width:700px">
         <canvas id="chart2" width="297" height="210"></canvas>
     </div>
@@ -71,6 +106,11 @@
                         color: 'white',
                     }
                 }
+            },
+            elements: {
+                point: {
+                    radius: 0
+                }
             }
         }
 
@@ -81,7 +121,7 @@
                 labels: [],
                 datasets: [
                 {
-                    label: "Front",
+                    label: "Temperature",
                     backgroundColor: data1Color.transparent,                    
                     borderColor: data1Color.solid,
                     pointColor: data1Color.solid,
@@ -94,7 +134,7 @@
                     fill: true
                 },
                 {
-                    label: "Middle",
+                    label: "Moisture",
                     backgroundColor: data2Color.transparent,
                     borderColor: data2Color.solid,
                     pointColor: data2Color.solid,
@@ -178,12 +218,13 @@
             },
         });
 
-        var dataCount = 720;
+        var dataWindowSize = 60;
+        var dataRequestCount = dataWindowSize;
 
         (function worker() {
             $.ajax({
                 url: 'data',
-                data: "count="+dataCount+"",
+                data: "count="+dataRequestCount+"",
                 dataType: 'text',
                 success: function(data) {
                     console.log('received new data');
@@ -195,7 +236,7 @@
                         let time = now - (i - 1)*timeDelta;       
                         addToChart(chart1, time, jsonData.data[i]);
                     }
-                    dataCount = 1;
+                    dataRequestCount = 1;
                 },
                 complete: function() {
                     setTimeout(worker, 60*1000);
@@ -206,7 +247,34 @@
         function addToChart(chart, time, y) {
             chart.data.labels.push(time);
             chart.data.datasets.forEach((dataset) => {dataset.data.push(y)});
+            if (chart.data.labels.length > dataWindowSize) {
+                chart.data.labels.shift()
+                chart.data.datasets.forEach((dataset) => {dataset.data.shift()});
+            }
             chart.update();
+        }
+
+        var input = document.getElementById("inp");
+        function onButtonClick() {
+            dataWindowSize = input.value;
+        }
+
+        var sidebarClosed = true;
+        function openSidebar() {
+            if (sidebarClosed) {             
+                sidebarClosed = false;   
+                document.getElementById("sidebar").style.width = "250px";
+                document.getElementById("main").style.marginLeft = "250px";
+                document.getElementById("sidebarButton").style.color = "#818181";   
+                document.getElementById("sidebarButton").innerHTML = "&times;";
+            } 
+            else {       
+                sidebarClosed = true;
+                document.getElementById("sidebar").style.width = "0";
+                document.getElementById("main").style.marginLeft= "0";            
+                document.getElementById("sidebarButton").style.color = "#000";    
+                document.getElementById("sidebarButton").innerHTML = "&#9776;";
+            }
         }
     </script>
 </body>
