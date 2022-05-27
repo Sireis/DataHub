@@ -48,7 +48,7 @@ void webBase_start()
 {
     xTaskCreatePinnedToCore(task, 
                             "webBaseTask", 
-                            8*1024, 
+                            10*1024, 
                             NULL, 
                             configMAX_PRIORITIES - 3, 
                             &_taskHandle, 
@@ -117,12 +117,7 @@ static void onIpConnect(void* arg, esp_event_base_t event_base, int32_t event_id
 
 static void onWifiDisconnected(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
-    httpd_handle_t* server = (httpd_handle_t*) arg;
-    if (*server) 
-    {
-        deleteWebserver(*server);
-        *server = NULL;
-    }
+    esp_wifi_connect();
 }
 
 static esp_err_t onGetRequestIndex(httpd_req_t *request)
@@ -170,10 +165,10 @@ static esp_err_t onGetRequestFavicon(httpd_req_t *request)
         return onGetRequestFaviconOverride(request);
     }
 
-    httpd_resp_set_type(request, "image/x-icon");
+    httpd_resp_set_type(request, "image/png");
 
-    extern const char faviconIcoStart[] asm("_binary_favicon_ico_start");
-    extern const char faviconIcoEnd[]   asm("_binary_favicon_ico_end");
+    extern const char faviconIcoStart[] asm("_binary_favicon_png_start");
+    extern const char faviconIcoEnd[]   asm("_binary_favicon_png_end");
     uint16_t faviconIcoLength = faviconIcoEnd - faviconIcoStart;
     ESP_LOGD(TAG, "sending icon of length: %d", faviconIcoLength);
     ESP_LOGD(TAG, "%s", faviconIcoStart);
