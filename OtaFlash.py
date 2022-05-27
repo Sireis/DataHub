@@ -38,11 +38,11 @@ def start_binary_server():
                        server_file=os.path.join(cert_dir, 'otacacert.pem'),
                        key_file=os.path.join(cert_dir, 'otaprvtkey.pem'))
 
-def initiate_update():
+def initiate_update(ip):
     ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
     ssl_context.verify_mode = ssl.CERT_NONE
     ssl_context.check_hostname = False
-    client = http.client.HTTPSConnection("192.168.178.68", 443, context=ssl_context)
+    client = http.client.HTTPSConnection(ip, 443, context=ssl_context)
     client.request("POST", "/flash", "DataHub")
 
 
@@ -51,7 +51,7 @@ if __name__ == '__main__':
     server_thread.start()
     server_started_event.wait()
     print("Sending download request")
-    initiate_update()
+    initiate_update(sys.argv[1])
     request_finished_event.wait(30)
     time.sleep(0.3)
     httpd.shutdown()
