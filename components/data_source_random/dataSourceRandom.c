@@ -58,6 +58,7 @@ static void task(void* parameters)
         if (outboundQueue != NULL)
         {
             dataQueueContent_t data = {
+                .source = _sourceIndex,
                 .unit = DATA_NO_DIMENSION,
                 .value = esp_random() % 10,
             };

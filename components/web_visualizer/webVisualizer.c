@@ -15,6 +15,7 @@
 #include "data_interface.h"
 
 #define RING_BUFFER_SIZE 1440
+#define JSON_BUFFER_SIZE 4096
 #define MAX_DATA_SOURCES DATA_SOURCE_COUNT
 
 static const char *TAG = "webVisualizer";
@@ -116,23 +117,38 @@ static esp_err_t onGetRequestData(httpd_req_t* request)
     ESP_LOGD(TAG, "incoming data get request: %s", request->uri);
     sscanf(request->uri, "/data?count=%hd", &requestedCount);
     ESP_LOGD(TAG, "sscanfed count: %d", requestedCount);
-    ringBuffer_t* buffer = &ringBuffers[DATA_SOURCE_0];
-    uint16_t availableCount = buffer->isOverflown ? RING_BUFFER_SIZE : buffer->nextWriteIndex;
-    uint16_t count = getMin(requestedCount, availableCount);
-    ESP_LOGD(TAG, "capped count %d", count);
-    char json[4096];
+    char json[JSON_BUFFER_SIZE];
     char *p = json;
     p += sprintf(p, "{\"sampleDelta\": 1, \"data\": [");
-    if (!isRingBufferEmpty(buffer))
+    for (uint8_t i = 0; i < MAX_DATA_SOURCES; ++i)
     {
-        for (uint16_t i = 0; i < count; ++i)
+        ringBuffer_t* buffer = &ringBuffers[i];
+        uint16_t availableCount = buffer->isOverflown ? RING_BUFFER_SIZE : buffer->nextWriteIndex;
+        uint16_t count = getMin(requestedCount, availableCount);
+
+        p += sprintf(p, "[");
+    
+        if (!isRingBufferEmpty(buffer))
         {
-            p += sprintf(p, "%d, ", readFromRingBuffer(buffer, -i));
+            for (uint16_t j = 0; j < count; ++j)
+            {
+                p += sprintf(p, "%d, ", readFromRingBuffer(buffer, -j));
+
+                if (p - json > JSON_BUFFER_SIZE - 20)
+                {
+                    httpd_resp_send_chunk(request, json, HTTPD_RESP_USE_STRLEN);
+                    p = json;
+                }        
+            }
+            p = p - 2;
         }
+        
+        p += sprintf(p, "], ");
     }
     sprintf(p - 2, "]}");    
     ESP_LOGI(TAG, "%s", json);
-    httpd_resp_send(request, json, HTTPD_RESP_USE_STRLEN);
+    httpd_resp_send_chunk(request, json, HTTPD_RESP_USE_STRLEN);
+    httpd_resp_send_chunk(request, json, 0);
 
     return ESP_OK;
 }

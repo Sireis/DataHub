@@ -30,7 +30,7 @@ static QueueHandle_t _outboundQueue = NULL;
 #define SUPPORTING_POINT_V_2        631
 
 static esp_adc_cal_characteristics_t *_adcCharacteristic;
-static const adc_channel_t _activeAdcChannel = ADC_CHANNEL_4;
+static const adc_channel_t _activeAdcChannel = ADC_CHANNEL_0;
 static const adc_bits_width_t _adcBitwidth = ADC_WIDTH_BIT_12;
 static const adc_atten_t _adcAttenuation = ADC_ATTEN_DB_11;
 static const adc_unit_t _adcUnit = ADC_UNIT_1;
@@ -95,6 +95,7 @@ static void task(void* parameters)
         {
             uint32_t milliVoltage = sampleMilliVoltage();
             dataQueueContent_t data = {
+                .source = _sourceIndex,
                 .unit = DATA_CELSIUS,
                 .value = convertToTemperature(milliVoltage),
                 //.value = milliVoltage,

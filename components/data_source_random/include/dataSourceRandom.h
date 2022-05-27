@@ -2,6 +2,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 
+#include "data_interface.h"
+
 void dataSourceRandom_init();
 void dataSourceRandom_start();
 void dataSourceRandom_setOutboundQueue(QueueHandle_t queue);

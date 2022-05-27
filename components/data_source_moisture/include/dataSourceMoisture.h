@@ -2,6 +2,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 
+#include "data_interface.h"
+
 void dataSourceMoisture_init();
 void dataSourceMoisture_start();
 void dataSourceMoisture_setOutboundQueue(QueueHandle_t queue);
