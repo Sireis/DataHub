@@ -12,49 +12,40 @@
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.3/moment.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0/dist/chartjs-adapter-moment.min.js"></script>    
     
-    <span id="sidebarButton" style="position: fixed;font-size:25px;cursor:pointer;z-index:999;" onclick="openSidebar()">&#9776;</span>
+    <span id="sidebarButton" style="position: fixed;font-size:25px;cursor:pointer;z-index:999;color:#A0A0A0" onclick="openSidebar()">&#9776;</span>
     <div id="sidebar" class="side">
         
         <div class="group">
             <div  style="float: left;" class="group">
-                <input type="text" id="name"/>
+                <input type="text" id="window" onkeypress="onWindowButtonPress(event)"/>
                 <label for="name">Window</label>
                 <div class="bar"></div>
             </div>
             
             <div>
-                <button class="button" onclick="onButtonClick()">&check;</button>
+                <button class="button" onclick="onWindowButtonClick()">&check;</button>
             </div>
         </div>
             
         <div class="group">      
             <div  style="float: left;" class="group">
-                <input type="text" id="name"/>
+                <input type="text" id="maxY" onkeypress="onMaxYButtonPress(event)"/>
                 <label for="name">Max Y</label>
                 <div class="bar"></div>
             </div>
             
             <div>
-                <button class="button" onclick="onButtonClick()">&check;</button>
+                <button class="button" onclick="onMaxYButtonClick()">&check;</button>
             </div>
         </div>
         
-        <a href="#">About</a>
+        <a href="#">Text</a>
     </div>
         
     <div id="main">
             <div style="max-width:700px;">
                 <canvas id="chart1" width="297" height="210"></canvas>
             </div>               
-    </div>
-        
-
-    
-    <div style="max-width:700px">
-        <canvas id="chart2" width="297" height="210"></canvas>
-    </div>
-    <div style="max-width:700px">
-        <canvas id="chart3" width="297" height="210"></canvas>
     </div>
 
     <script>
@@ -70,27 +61,29 @@
 
         var data1Color = {
             solid: "rgba(195, 40, 96, 1)",
-            transparent: "rgba(195, 40, 96, 0.1)"
+            transparent: "rgba(195, 40, 96, 0.2)"
         };
         
         var data2Color = {
             solid: "rgba(255, 172, 100, 1)",
-            transparent: "rgba(255, 172, 100, 0.1)"
+            transparent: "rgba(255, 172, 100, 0.2)"
         };
         
         var data3Color = {
             solid: "rgba(88, 188, 116, 1)",
-            transparent: "rgba(88, 188, 116, 0.1)"
+            transparent: "rgba(88, 188, 116, 0.2)"
         };
-
+        
+        var foregroundColor = "rgba(160, 160, 160, 1.0)";
+        
         var commonOptions = {
             scales: {
                 x: {
                     grid: {
-                        color: 'white'
+                        color: foregroundColor
                     },
                     ticks: {
-                        color: 'white'
+                        color: foregroundColor
                     },
                     type: 'time',
                     time: {
@@ -100,10 +93,10 @@
                 y: {
                     beginAtZero: true,
                     grid: {
-                        color: 'white'
+                        color: foregroundColor
                     },
                     ticks: {
-                        color: 'white',
+                        color: foregroundColor,
                     }
                 }
             },
@@ -145,77 +138,10 @@
                     pointBorderWidth: 6,
                     data: [],
                     fill: true
-                },
-                {
-                    label: "Back",
-                    backgroundColor: data3Color.transparent,
-                    borderColor: data3Color.solid,
-                    pointColor: data3Color.solid,
-                    pointBorderColor: data3Color.solid,
-                    pointBackgroundColor: data3Color.solid,
-                    pointHoverBorderColor: 'white',
-                    pointHitRadius: 20,
-                    pointBorderWidth: 6,
-                    data: [],
-                    fill: true
                 }
                 ]
             },
             options: commonOptions,
-        });
-        
-        const context2 = document.getElementById('chart2').getContext('2d');
-        const chart2 = new Chart(context2, {
-            type: 'line',
-            data: {
-                datasets: [{
-                    label: "chart 2",
-                    data: 0,
-                    fillColor: "rgba(255, 172, 100, 0.1)",
-                    strokeColor: "rgba(255, 172, 100, 1)",
-                    pointColor: "rgba(255, 172, 100, 1)",
-                    pointStrokeColor: "#202b33",
-                    pointHighlightStroke: "rgba(225,225,225,0.9)",
-                    tension: 0.5
-                }]
-            },
-            options: {            
-                scales: {
-                    xAxes: {
-                        type: 'time',
-                        time: {
-                            unit: 'minute'
-                        }
-                    }
-                }
-            },
-        });
-        
-        const context3 = document.getElementById('chart3').getContext('2d');
-        const chart3 = new Chart(context3, {
-            type: 'line',
-            data: {
-                datasets: [{
-                    label: "chart 3",
-                    data: 0,
-                    fillColor: "rgba(19, 71, 34, 0.3)",
-                    strokeColor: "rgba(88, 188, 116, 1)",
-                    pointColor: "rgba(88, 188, 116, 1)",
-                    pointStrokeColor: "#202b33",
-                    pointHighlightStroke: "rgba(225,225,225,0.9)",
-                    tension: 0.5
-                }]
-            },
-            options: {            
-                scales: {
-                    xAxes: {
-                        type: 'time',
-                        time: {
-                            unit: 'minute'
-                        }
-                    }
-                }
-            },
         });
 
         var dataWindowSize = 60;
@@ -227,15 +153,10 @@
                 data: "count="+dataRequestCount+"",
                 dataType: 'text',
                 success: function(data) {
-                    console.log('received new data');
                     let jsonData = JSON.parse(data);
                     console.log(jsonData);
-                    let now = new Date();
-                    let timeDelta = moment.duration(jsonData.sampleDelta, 'minutes');
-                    for (let i = jsonData.data.length - 1; i >= 0; i--) {         
-                        let time = now - (i - 1)*timeDelta;       
-                        addToChart(chart1, time, jsonData.data[i]);
-                    }
+
+                    addDataToChart(chart1, new Date(), jsonData.sampleDelta, jsonData.data);
                     dataRequestCount = 1;
                 },
                 complete: function() {
@@ -244,19 +165,69 @@
             });
         })();
 
-        function addToChart(chart, time, y) {
+        function addDataToChart(chart, newestTime, sampleDelta, dataArrays, doUpdate = true) {
+            let timeDelta = moment.duration(sampleDelta, 'minutes');
+            for (let i = dataArrays[0].length - 1; i >= 0; i--) {         
+                let time = newestTime - (i - 1)*timeDelta;       
+                addToChart(chart, time, [dataArrays[0][i], dataArrays[1][i]], doUpdate);
+            }
+        }
+
+        function addToChart(chart, time, y, doUpdate = true) {
             chart.data.labels.push(time);
-            chart.data.datasets.forEach((dataset) => {dataset.data.push(y)});
+            let i = 0;
+            chart.data.datasets.forEach((dataset, index) => {dataset.data.push(y[index])});
             if (chart.data.labels.length > dataWindowSize) {
                 chart.data.labels.shift()
                 chart.data.datasets.forEach((dataset) => {dataset.data.shift()});
             }
-            chart.update();
+
+            if (doUpdate) {
+                chart.update();
+            }            
         }
 
-        var input = document.getElementById("inp");
-        function onButtonClick() {
-            dataWindowSize = input.value;
+        function onWindowButtonPress(event)
+        {
+            if (event.key == "Enter")
+            {
+                onWindowButtonClick();
+            }
+        }
+
+        function onWindowButtonClick() {
+            let input = document.getElementById("window");
+            dataWindowSize = Math.round(input.value);
+            
+            $.ajax({
+                url: 'data',
+                data: "count="+dataWindowSize+"",
+                dataType: 'text',
+                success: function(data) {
+                    let jsonData = JSON.parse(data);
+                    console.log(jsonData);
+
+                    chart1.data.labels = [];
+                    chart1.data.datasets.forEach((dataset) => {dataset.data = []});
+                    addDataToChart(chart1, new Date(), jsonData.sampleDelta, jsonData.data, false);
+                    chart1.update();
+                    dataRequestCount = 1;
+                }
+            });
+        }
+
+        function onMaxYButtonPress(event)
+        {
+            if (event.key == "Enter") {                
+                onMaxYButtonClick();
+            }
+        }
+        
+        function onMaxYButtonClick() {
+            let input = document.getElementById("maxY");
+            chart1.options.scales.y.min = 0;
+            chart1.options.scales.y.max = Math.round(input.value);
+            chart1.update();
         }
 
         var sidebarClosed = true;
@@ -272,7 +243,7 @@
                 sidebarClosed = true;
                 document.getElementById("sidebar").style.width = "0";
                 document.getElementById("main").style.marginLeft= "0";            
-                document.getElementById("sidebarButton").style.color = "#000";    
+                document.getElementById("sidebarButton").style.color = foregroundColor;    
                 document.getElementById("sidebarButton").innerHTML = "&#9776;";
             }
         }
