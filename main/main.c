@@ -46,8 +46,8 @@ void initUserComponents()
     webBase_init();
     webFlash_init();
     webVisualizer_init();
+    //dataSourceRaw_init();
     dataSourceTemperature_init();
-    dataSourceRaw_init();
     dataSourceMoisture_init();
 }
 
@@ -55,7 +55,7 @@ void configureComponents()
 {
     QueueHandle_t queue = dataIf_createQueue(10);
     dataSourceTemperature_setOutboundQueue(queue);
-    dataSourceRaw_setOutboundQueue(queue);
+    //dataSourceRaw_setOutboundQueue(queue);
     dataSourceMoisture_setOutboundQueue(queue);
     webVisualizer_setInboundQueue(queue);
 
@@ -69,7 +69,7 @@ void startComponents()
     webBase_start();
     webFlash_start();
     webVisualizer_start();
+    //dataSourceRaw_start();
     dataSourceTemperature_start();
-    dataSourceRaw_start();
     dataSourceMoisture_start();
 }
