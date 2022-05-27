@@ -10,5 +10,5 @@ idf_component_register(SRCS           "${sources}"
                                       "certificates/prvtkey.pem"
                                       "webpage/index.html"
                                       "webpage/styles.css"
-                                      "webpage/favicon.ico"
+                                      "webpage/favicon.png"
                       )
