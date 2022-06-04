@@ -1,4 +1,3 @@
-
 body {
 	background: #333;
 	font-family: Verdana, Geneva, Tahoma, sans-serif;
@@ -101,70 +100,49 @@ p {
   transform: translateY(0);
 }
 
-  .group {
+.group {
 	width: 100px;
 	height: 40px;
-  margin-left: 10px;
+  margin-top: 7px;
+  margin-left: 10px;  
   overflow: hidden;
   position: relative;
-  }
-  label {
-	position: absolute;
-	top: 9px;
-	color: rgba(255, 255, 255, 0.5);
-	font: 15px Verdana;
-	cursor: text;
-	transition: 0.25s ease;
-  }
-  input {
-	display: block;
-	width: 100%;
-	padding-top: 13.3333333333px;
-  padding-right: 0px;
-	border: none;
-	border-radius: 0;
-	color: white;
-	background: #333;
-	font-size: 13.3333333333px;
-	transition: 0.3s ease;
-  }
-  input:valid ~ label {
-	top: 0;
-	font: 10px Verdana;
-	color: rgba(255, 255, 255, 0.5);
-  }
-  input:focus {
-	outline: none;
-  }
-  input:focus ~ label {
-	top: 0;
-	font: 10px Verdana;
-	color: #2196f3;
-  }
-  input:focus ~ .bar:before {
-	transform: translateX(0);
-  }
-  input:-webkit-autofill {
-	-webkit-box-shadow: 0 0 0px 1000px #333 inset;
-	-webkit-text-fill-color: white !important;
-  }
-  .bar {
-	background: rgba(255, 255, 255, 0.5);
-	content: '';
-	width: 100px;
-	height: 1.3333333333px;
-	transition: 0.3s ease;
-	position: relative;
-  }
-  .bar:before {
-	content: '';
-	position: absolute;
-	width: 100%;
-	height: 150%;
-	background: #2196f3;
-	transform: translateX(-100%);
-  }
-  ::selection {
-	background: rgba(33, 150, 243, 0.3);
-  }
-  .wtf {}
+}
+
+.input-group {
+  position: relative;
+  margin: 5 0;
+}
+
+.input {
+  padding: 12px 10px 8px 10px;
+  border: none;
+  border-bottom: 2px solid #fff8;
+  color: #fffc;
+  background-color: #333;
+  outline: none;
+}
+
+.input-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: #fff8;
+  cursor: text;
+  transform: translate(10px, 10px);
+  transform-origin: left;
+  transition: transform .15s;
+}
+
+.input:focus+.input-label {
+  transform: translate(2px, -4px) scale(.7);
+  color: #2196f3;
+}
+
+.input:valid+.input-label {
+  transform: translate(1px, -5px) scale(.7);
+}
+
+.input:is(:focus) {
+  border-color: #2196f3;
+}

@@ -16,10 +16,9 @@
     <div id="sidebar" class="side">
         
         <div class="group">
-            <div  style="float: left;" class="group">
-                <input type="text" id="window" onkeypress="onWindowButtonPress(event)"/>
-                <label for="name">Window</label>
-                <div class="bar"></div>
+            <div  style="float: left;" class="input-group">
+                <input type="text" id="window" required class="input" onkeypress="onWindowButtonPress(event)"/>
+                <label for="window" class="input-label">Window</label>
             </div>
             
             <div>
@@ -28,10 +27,9 @@
         </div>
             
         <div class="group">      
-            <div  style="float: left;" class="group">
-                <input type="text" id="maxY" onkeypress="onMaxYButtonPress(event)"/>
-                <label for="name">Max Y</label>
-                <div class="bar"></div>
+            <div  style="float: left;" class="input-group">
+                <input type="text" id="maxY" required class="input" onkeypress="onMaxYButtonPress(event)"/>
+                <label for="maxY" class="input-label">Max Y</label>
             </div>
             
             <div>
@@ -234,14 +232,22 @@
         function openSidebar() {
             if (sidebarClosed) {             
                 sidebarClosed = false;   
-                document.getElementById("sidebar").style.width = "250px";
-                document.getElementById("main").style.marginLeft = "250px";
+                document.getElementById("sidebar").style.width = "200px";
+                document.getElementById("sidebar").style.minWidth = "100px";
+                document.getElementById("sidebar").style.maxWidth = "30%";
+                let actualMaxWidth = document.documentElement.clientWidth * 0.3;
+                let actualMinWidth = 100;
+                let requestedWidth = 200;
+                let actualWidth = Math.min(actualMaxWidth, 200);
+                document.getElementById("main").style.marginLeft = actualWidth + "px";
                 document.getElementById("sidebarButton").style.color = "#818181";   
                 document.getElementById("sidebarButton").innerHTML = "&times;";
             } 
             else {       
                 sidebarClosed = true;
                 document.getElementById("sidebar").style.width = "0";
+                document.getElementById("sidebar").style.minWidth = "0px";
+                document.getElementById("sidebar").style.maxWidth = "0px";
                 document.getElementById("main").style.marginLeft= "0";            
                 document.getElementById("sidebarButton").style.color = foregroundColor;    
                 document.getElementById("sidebarButton").innerHTML = "&#9776;";
